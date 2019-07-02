@@ -1,0 +1,95 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+    # VM for application 1
+    config.vm.define "frontend" do |frontend|
+        frontend.vm.box = "ubuntu/bionic64"
+        frontend.vm.hostname = "frontend"
+        frontend.vm.network "private_network", ip: "192.168.33.30"
+        frontend.vm.network "forwarded_port", guest: 443, host: 3444
+        frontend.vm.network "forwarded_port", guest: 80, host: 3081
+
+        # Provider settings
+        frontend.vm.provider "virtualbox" do |vb|
+            vb.name = 'frontend'
+            vb.cpus = 1
+            vb.memory = 1024
+        end
+        # Folder setting
+        frontend.vm.synced_folder "../", "/app/", create: false
+    end
+
+    # VM for application 2
+    config.vm.define "backend" do |backend|
+        backend.vm.box = "ubuntu/bionic64"
+        backend.vm.hostname = "backend"
+        backend.vm.network "private_network", ip: "192.168.33.31"
+        backend.vm.network "forwarded_port", guest: 443, host: 3445
+        backend.vm.network "forwarded_port", guest: 80, host: 3082
+
+        # Provider settings
+        backend.vm.provider "virtualbox" do |vb|
+            vb.name = 'backend'
+            vb.cpus = 1
+            vb.memory = 1024
+        end
+        # Folder setting
+        backend.vm.synced_folder "../", "/app/", create: false
+    end
+
+    # VM with terraform
+    config.vm.define "terraform" do |terraform|
+        terraform.vm.box = "ubuntu/bionic64"
+        terraform.vm.hostname = "terraform"
+        terraform.vm.network "private_network", ip: "192.168.33.32"
+
+        # Provider settings
+        terraform.vm.provider "virtualbox" do |vb|
+            vb.name = 'terraform'
+            vb.cpus = 1
+            vb.memory = 1024
+        end
+
+        $script = <<-SHELL
+            apt-get update
+            apt-get install unzip
+            # downloading terraform
+            wget https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip 
+            # unziping terraform
+            unzip terraform_0.11.10_linux_amd64.zip 
+            # move the executable into a directory searched for executables
+            mv terraform /usr/local/bin/
+        SHELL
+        # Provision script
+        terraform.vm.provision "shell", inline: $script
+    end
+
+    config.vm.provider "virtualbox" do |vb|
+        vb.gui = false
+        vb.cpus = 2
+        vb.memory = 2048
+    end
+
+    $script = <<-SHELL
+    
+    # install docker
+    apt-get update
+    apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    apt-get update
+    apt-get install -y docker-ce
+    base=https://github.com/docker/machine/releases/download/v0.16.0 && curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine && sudo install /tmp/docker-machine /usr/local/bin/docker-machine
+    curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+    usermod -a -G docker vagrant
+
+    SHELL
+
+    config.vm.provision "shell", inline: $script
+
+    # To execute a shell script
+    #config.vm.provision "shell", path: "bootstrap.sh"
+end

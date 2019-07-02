@@ -1,4 +1,4 @@
-# vagrant_bootstrap
+# Sample Vagrant files
 Quickly setup single or multiple virtual machines with the required configuration.
 
 ## What is [Vagrant](https://www.vagrantup.com/)?
@@ -29,3 +29,8 @@ Quickly setup single or multiple virtual machines with the required configuratio
 7. __vagrant ssh-config__: Output valid configuration for a SSH config.
 8. __vagrant destroy__: Stop the virtual machines and destroy all resources related to the machine.  
 _Refer [Vagrant CLI documentation](https://www.vagrantup.com/docs/cli/) for more commands._
+
+### Samples
+1. single_vm: start a single virtual machine
+2. multi_vm: start multiple virtual machines (in this case 3)
+3. input_data_in_provision: input data such as credentials during creation of virtual machine
